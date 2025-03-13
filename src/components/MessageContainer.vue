@@ -1,5 +1,6 @@
 <script setup>
 import { ref, onMounted, nextTick } from 'vue';
+import { useUserStore } from '@/stores/userStore';
 import Message from './Message.vue';
 
 const messages = ref([]);
@@ -7,11 +8,10 @@ const scrollContainer = ref(null);
 const loading = ref(false);
 const newMessagesCount = ref(0);
 const lastFetchedTime = ref(new Date().toISOString());
-
-const token = localStorage.getItem('token');
+const userStore = useUserStore();
 
 async function fetchMessages(before = null, after = null, limit = 10) {
-  if (!token) return;
+  if (!userStore.token) return;
 
   let url = `https://hap-app-api.azurewebsites.net/messages?limit=${limit}`;
   if (before) url += `&before=${before}`;
@@ -22,7 +22,7 @@ async function fetchMessages(before = null, after = null, limit = 10) {
     const response = await fetch(url, {
       method: 'GET',
       headers: {
-        'Authorization': `Bearer ${token}`,
+        'Authorization': `Bearer ${userStore.token}`,
         'Content-Type': 'application/json',
       }
     });
@@ -47,7 +47,7 @@ async function fetchMessages(before = null, after = null, limit = 10) {
 }
 
 async function checkNewMessages() {
-  if (!token) return;
+  if (!userStore.token) return;
 
   let url = `https://hap-app-api.azurewebsites.net/messages/count?after=${lastFetchedTime.value}`;
 
@@ -55,7 +55,7 @@ async function checkNewMessages() {
     const response = await fetch(url, {
       method: 'GET',
       headers: {
-        'Authorization': `Bearer ${token}`,
+        'Authorization': `Bearer ${userStore.token}`,
         'Content-Type': 'application/json',
       }
     });

@@ -1,25 +1,24 @@
 <script setup>
 import { ref, onMounted, nextTick } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
+import { useUserStore } from '@/stores/userStore';
 import Header from '@/components/Header.vue';
 
 const route = useRoute();
 const router = useRouter();
+const userStore = useUserStore();
+
 const messages = ref([]);
 const messageText = ref('');
 const feedbackMessage = ref('');
 const userId = route.params.userId;
 const userName = route.query.name || "User";
-const currentUserId = ref(localStorage.getItem('userId') || '');
-const currentUserName = ref(localStorage.getItem('userName') || 'You');
-const token = localStorage.getItem('token');
 const scrollContainer = ref(null);
 const oldestMessageTime = ref(null);
 const loadingOlderMessages = ref(false);
 
-// ** Fetch Messages with Pagination (Starts with 5) **
 async function fetchMessages(before = null, limit = 5) {
-  if (!token) return;
+  if (!userStore.token) return;
 
   let url = `https://hap-app-api.azurewebsites.net/messages/${userId}?limit=${limit}`;
   if (before) url += `&before=${before}`;
@@ -28,7 +27,7 @@ async function fetchMessages(before = null, limit = 5) {
     const response = await fetch(url, {
       method: 'GET',
       headers: {
-        'Authorization': `Bearer ${token}`,
+        'Authorization': `Bearer ${userStore.token}`,
         'Content-Type': 'application/json',
       }
     });
@@ -37,13 +36,13 @@ async function fetchMessages(before = null, limit = 5) {
       const data = await response.json();
 
       if (before) {
-        messages.value.unshift(...data.reverse()); // Prepend older messages at the top
+        messages.value.unshift(...data.reverse());
       } else {
-        messages.value = data.reverse(); // Initial load
+        messages.value = data.reverse();
       }
 
       if (messages.value.length > 0) {
-        oldestMessageTime.value = messages.value[0].updatedAt; // Track oldest message
+        oldestMessageTime.value = messages.value[0].updatedAt;
       }
 
       nextTick(() => {
@@ -79,8 +78,8 @@ async function sendMessage() {
   if (!messageText.value.trim()) return;
 
   const newMessage = {
-    senderId: currentUserId.value,
-    senderName: currentUserName.value,
+    senderId: userStore.userId,
+    senderName: userStore.userName,
     text: messageText.value.trim(),
     updatedAt: new Date().toISOString(),
   };
@@ -94,7 +93,7 @@ async function sendMessage() {
     const response = await fetch(url, {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${token}`,
+        'Authorization': `Bearer ${userStore.token}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify(payload)
@@ -152,8 +151,8 @@ onMounted(() => {
       <div v-for="msg in messages" :key="msg.messageId" 
         :class="{
           'message': true, 
-          'message-sent': msg.senderId === currentUserId, 
-          'message-received': msg.senderId !== currentUserId
+          'message-sent': msg.senderId === userStore.userId, 
+          'message-received': msg.senderId !== userStore.userId
         }">
         <p class="message-sender">{{ msg.senderName }}</p>
         <p class="message-text">{{ msg.text }}</p>

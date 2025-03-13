@@ -1,9 +1,11 @@
 <script setup>
 import Header from '../components/Header.vue';
 import { useRouter } from 'vue-router';
+import { useUserStore } from '@/stores/userStore';
 import { ref, computed } from 'vue';
 
 const router = useRouter();
+const userStore = useUserStore();
 
 const firstName = ref('');
 const lastName = ref('');
@@ -56,10 +58,7 @@ async function handleJoin() {
 
     if (response.status === 201) {
       const responseData = await response.json();
-      localStorage.setItem('token', responseData.token);
-
-      await fetchUserDetails();
-
+      userStore.setUser(responseData, responseData.token);
       router.push({ name: 'main' });
     } 
     else if (response.status === 400 && password.value.length >= 8) {
@@ -69,31 +68,6 @@ async function handleJoin() {
   catch (err) {
     console.error('Error:', err);
     error.value = 'Unable to connect to the server. Please try again later.';
-  }
-}
-
-async function fetchUserDetails() {
-  const token = localStorage.getItem('token');
-  const url = 'https://hap-app-api.azurewebsites.net/user';
-
-  try {
-    let response = await fetch(url, {
-      method: 'GET',
-      headers: { Authorization: `Bearer ${token}` },
-    });
-
-    if (response.status === 200) {
-      const userData = await response.json();
-
-      localStorage.setItem('firstName', userData.firstName);
-      localStorage.setItem('lastName', userData.lastName);
-      localStorage.setItem('email', userData.email);
-      localStorage.setItem('userName', userData.userName);
-    } else {
-      console.error('Failed to retrieve user details:', response.status);
-    }
-  } catch (err) {
-    console.error('Error fetching user data:', err);
   }
 }
 </script>

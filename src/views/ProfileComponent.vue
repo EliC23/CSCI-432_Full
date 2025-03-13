@@ -1,24 +1,19 @@
 <script setup>
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
+import { useUserStore } from '@/stores/userStore'
 import Modal from '@/components/Modal.vue'
 import Toast from '@/components/Toast.vue'
 
 const router = useRouter()
-
-const profile = ref({
-    userName: localStorage.getItem('userName') || 'Unknown',
-    firstName: localStorage.getItem('firstName') || 'First',
-    lastName: localStorage.getItem('lastName') || 'Last',
-    email: localStorage.getItem('email') || 'email@example.com',
-})
+const userStore = useUserStore()
 
 const modal = ref(null)
 const message = ref('')
-const updatedProfile = ref({ ...profile.value })
+const updatedProfile = ref({ ...userStore })
 
 function openEditModal() {
-    updatedProfile.value = { ...profile.value, password: '' }
+    updatedProfile.value = { ...userStore, password: '' }
     modal.value.open()
 }
 function closeEditModal() {
@@ -27,65 +22,12 @@ function closeEditModal() {
   modal.value.close()
 }
 async function saveChanges() {
-
-    const token = localStorage.getItem('token')
-    if (!token) {
-        console.error("No token found in local storage")
-        return
-    }
-
-    const url = 'https://hap-app-api.azurewebsites.net/user'
-
-    const validUpdates = {
-        userName: updatedProfile.value.userName.trim(),
-        firstName: updatedProfile.value.firstName.trim(),
-        lastName: updatedProfile.value.lastName.trim(),
-        email: updatedProfile.value.email.trim(),
-    }
-
-    if (updatedProfile.value.password && updatedProfile.value.password.length >= 8) {
-        validUpdates.password = updatedProfile.value.password
-    } else if (updatedProfile.value.password && updatedProfile.value.password.length < 8) {
-        console.error("Password too short.")
-        return
-    }
-
-    console.log("Request Payload:", JSON.stringify(validUpdates))
-
-    const options = {
-        method: 'PATCH',
-        headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${token}`
-        },
-        body: JSON.stringify(validUpdates)
-    }
-
     try {
-        let response = await fetch(url, options)
-        console.log("Response Status:", response.status)
-
-        if (response.status === 200) {
-            const updatedData = await response.json()
-            console.log("Updated Data:", updatedData)
-
-            localStorage.setItem('userName', updatedData.userName)
-            localStorage.setItem('firstName', updatedData.firstName)
-            localStorage.setItem('lastName', updatedData.lastName)
-            localStorage.setItem('email', updatedData.email)
-
-            profile.value = { ...updatedData }
-
-            message.value = ""
-            message.value = "Profile updated successfully!"
-            
-            modal.value.close()
-        } else {
-            const errorData = await response.json()
-            console.error("Error Response:", errorData)
-        }
-    } catch (err) {
-        console.error("Error updating profile:", err)
+        await userStore.updateProfile(updatedProfile.value);
+        message.value = "Profile updated successfully!";
+        modal.value.close();
+    } catch (error) {
+        console.error("Error updating profile:", error);
     }
 }
 function goBack() {
@@ -96,10 +38,10 @@ function goBack() {
 <template>
     <div class="profile">
         <h2>User Profile</h2>
-        <p><strong>Username:</strong> {{ profile.userName }}</p>
-        <p><strong>First Name:</strong> {{ profile.firstName }}</p>
-        <p><strong>Last Name:</strong> {{ profile.lastName }}</p>
-        <p><strong>Email:</strong> {{ profile.email }}</p>
+        <p><strong>Username:</strong> {{ userStore.userName }}</p>
+        <p><strong>First Name:</strong> {{ userStore.firstName }}</p>
+        <p><strong>Last Name:</strong> {{ userStore.lastName }}</p>
+        <p><strong>Email:</strong> {{ userStore.email }}</p>
 
         <button @click="openEditModal">Edit</button>
         <button @click="goBack">Back</button>

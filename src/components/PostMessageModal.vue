@@ -1,10 +1,11 @@
 <script setup>
 import { ref } from 'vue';
+import { useUserStore } from '@/stores/userStore';
 
 const showModal = ref(false);
 const messageText = ref('');
 const feedbackMessage = ref('');
-const token = localStorage.getItem('token');
+const userStore = useUserStore();
 
 function openModal() {
   showModal.value = true;
@@ -33,7 +34,7 @@ async function postMessage() {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      Authorization: `Bearer ${token}`,
+      Authorization: `Bearer ${userStore.token}`,
     },
     body: JSON.stringify(payload),
   };

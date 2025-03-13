@@ -1,27 +1,29 @@
 <script setup>
 import Header from '../components/Header.vue';
 import { RouterView,useRouter } from 'vue-router';
+import { useUserStore } from '@/stores/userStore';
 import { ref, onMounted } from 'vue';
 
 const router = useRouter();
+const userStore = useUserStore();
 const userName = ref('');
 const showDropdown = ref(false);
 const showSidebarAccount = ref(false);
 const showUserDropdown = ref(false);
 
 onMounted(() => {
-  const storedUsername = localStorage.getItem("userName");
-  userName.value = storedUsername
+  if (!userStore.userName) {
+    userStore.fetchUserDetails();
+  }
 });
 
 async function signOut(event) {
-  const token = localStorage.getItem("token"); 
   const url = 'https://hap-app-api.azurewebsites.net/user/logout';
 
   const options = {
     method: "POST",
     headers: {
-      Authorization: `Bearer ${token}`,
+      Authorization: `Bearer ${userStore.token}`,
     },
   };
 
@@ -30,12 +32,8 @@ async function signOut(event) {
 
     if (response.ok) {
       if (response.status === 200) {
-        localStorage.removeItem("token");
-        localStorage.removeItem("userName");
-
-        router.push({
-          name: 'home',
-        });
+        userStore.$reset();
+        await router.replace({ name: 'home' });
       }
     } 
     else {

@@ -7,6 +7,8 @@ import ProfileComponent from '@/views/ProfileComponent.vue'
 import DeleteConfirm from '@/views/DeleteConfirm.vue'
 import DeleteAccountForm from '@/views/DeleteAccountForm.vue'
 import MainWelcome from '@/views/MainWelcome.vue'
+import { useUserStore } from '@/stores/userStore';
+
 
 const router = createRouter({
     history: createWebHistory(import.meta.env.BASE_URL),
@@ -76,7 +78,8 @@ const router = createRouter({
 });
 
 router.beforeEach((to, from, next) => {
-    const isAuthenticated = !!localStorage.getItem('token');
+    const userStore = useUserStore();
+    const isAuthenticated = !!userStore.token;
 
     if (to.meta.authRequired && !isAuthenticated) {
         next('/');

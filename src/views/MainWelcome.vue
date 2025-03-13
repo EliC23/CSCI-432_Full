@@ -1,18 +1,21 @@
 <script setup>
 import { ref, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
+import { useUserStore } from '@/stores/userStore';
 import MessageContainer from '@/components/MessageContainer.vue';
 import PostMessageModal from '@/components/PostMessageModal.vue';
 
+const userStore = useUserStore();
 const userName = ref('');
 const postModal = ref(null);
 const searchQuery = ref('');
 const searchResults = ref([]);
 const router = useRouter();
-const token = localStorage.getItem('token');
 
 onMounted(() => {
-  userName.value = localStorage.getItem('userName') || 'Guest';
+  if (!userStore.userName) {
+    userStore.fetchUserDetails();
+  }
 });
 
 function openPostModal() {
@@ -31,7 +34,7 @@ async function searchUsers() {
     const response = await fetch(url, {
       method: 'GET',
       headers: {
-        'Authorization': `Bearer ${token}`,
+        'Authorization': `Bearer ${userStore.token}`,
         'Content-Type': 'application/json',
       },
     });
@@ -49,7 +52,7 @@ async function searchUsers() {
 
 <template>
   <div class="main-content">
-    <h1 class="welcome-heading">Welcome, {{ userName }}!</h1>
+    <h1 class="welcome-heading">Welcome, {{ userStore.userName }}!</h1>
 
     <div class="search-container">
       <input 
